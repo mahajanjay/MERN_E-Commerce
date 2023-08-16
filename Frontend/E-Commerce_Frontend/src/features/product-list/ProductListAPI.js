@@ -8,10 +8,14 @@ export function fetchAllProducts() {
 }
 
 export function fetchProductsByFilters(filter) {
-  //filter={"category": "smartphone"}
+  //filter={"category": ["smartphone", "laptops"]}
   let queryString = '';
   for(let key in filter) {
-    queryString += `${key}=${filter[key]}&`
+    const categoryValues = filter[key];
+    if(categoryValues.length > 0) {
+      const lastCategoryValue = categoryValues[categoryValues.length-1];
+      queryString += `${key}=${lastCategoryValue}&`
+    }
   }
 
   return new Promise(async (resolve) => {
