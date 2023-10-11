@@ -7,8 +7,11 @@ import {
   updateCartAsync,
 } from "../features/cart/cartSlice";
 import { useForm } from "react-hook-form";
-import { selectLoggedInUser, updateUserAsync } from "../features/auth/authSlice";
-import { createOrderAsync } from "../features/order/orderSlice";
+import {
+  selectLoggedInUser,
+  updateUserAsync,
+} from "../features/auth/authSlice";
+import { createOrderAsync, selectCurrentOrder } from "../features/order/orderSlice";
 
 function Checkout() {
   const dispatch = useDispatch();
@@ -17,15 +20,16 @@ function Checkout() {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm();
 
   // const [open, setOpen] = useState(true);
   const items = useSelector(selectCartItems);
   const user = useSelector(selectLoggedInUser);
+  const currentOrder = useSelector(selectCurrentOrder);
 
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   const totalAmount = items.reduce(
     (amount, item) => item.price * item.quantity + amount,
@@ -43,20 +47,30 @@ function Checkout() {
 
   const handleAddress = (e) => {
     setSelectedAddress(user.addresses[e.target.value]);
-  }
+  };
 
   const handlePayment = (e) => {
-    setPaymentMethod(e.target.value)
-  }
+    setPaymentMethod(e.target.value);
+  };
 
   const handleOrder = (e) => {
-    const order = {items, totalAmount, totalItems, user, paymentMethod, selectedAddress};
+    const order = {
+      items,
+      totalAmount,
+      totalItems,
+      user,
+      paymentMethod,
+      selectedAddress,
+      status: "pending",
+    };
     dispatch(createOrderAsync(order));
-  }
+  };
 
   return (
     <>
+      {console.log(user)}
       {!items.length && <Navigate to="/" replace={true} />}
+      {currentOrder && <Navigate to={`/order-success/${currentOrder.id}`} replace={true} />}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-5">
           <div className="lg:col-span-3">
@@ -64,8 +78,12 @@ function Checkout() {
               className="bg-white py-12 px-5 mt-12"
               noValidate
               onSubmit={handleSubmit((data) => {
+                console.log(data);
                 dispatch(
-                  updateUserAsync({ ...user, addresses: [...user.addresses, data] })
+                  updateUserAsync({
+                    ...user,
+                    addresses: [...user.addresses, data],
+                  })
                 );
                 reset();
               })}
@@ -128,7 +146,7 @@ function Checkout() {
                           Phone
                         </label>
                         <div className="mt-2">
-                        <input
+                          <input
                             id="phone"
                             {...register("phone", {
                               required: "email is required",
@@ -242,7 +260,7 @@ function Checkout() {
                       Choose from existing addresses
                     </p>
                     <ul role="list">
-                      {user.addresses.map((address, index) => (
+                      {user.addresses && user?.addresses?.map((address, index) => (
                         <li
                           key={index}
                           className="flex justify-between gap-x-6 px-5 py-5 border-solid border-2 border-gray-200"
@@ -294,7 +312,7 @@ function Checkout() {
                               name="payments"
                               onChange={handlePayment}
                               value="cash"
-                              checked={ paymentMethod === 'cash' }
+                              checked={paymentMethod === "cash"}
                               type="radio"
                               className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
                             />
@@ -311,7 +329,7 @@ function Checkout() {
                               name="payments"
                               onChange={handlePayment}
                               value="card"
-                              checked={ paymentMethod === 'card' }
+                              checked={paymentMethod === "card"}
                               type="radio"
                               className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
                             />
